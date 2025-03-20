@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String       @id @default(cuid())
+  email              String       @unique
+  password           String
+  firstName          String
+  lastName           String
+  phone              String
+  address            String
+  city               String
+  postalCode         String
+  additionalInfo     String?
+  isAdmin            Boolean      @default(false)
+  isApproved         Boolean      @default(false)
+  isActive           Boolean      @default(true)    // Added for account deactivation
+  resetToken         String?
+  resetTokenExpiry   DateTime?
+  children           Child[]
+  services           Service?
+  paymentInfo        Payment?
+  updateRequests     UpdateRequest[]
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model Child {
+  id            String    @id @default(cuid())
+  firstName     String
+  lastName      String
+  age           Int
+  specialNotes  String?   
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Service {
+  id                 String    @id @default(cuid())
+  childcare          Boolean   @default(false)
+  mealPreparation    Boolean   @default(false)
+  lightHousekeeping  Boolean   @default(false)
+  tutoring           Boolean   @default(false)
+  petMinding         Boolean   @default(false)
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId             String    @unique
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Payment {
+  id            String    @id @default(cuid())
+  nameOnCard    String
+  cardNumber    String
+  expiryDate    String
+  cvv           String
+  saveCard      Boolean   @default(false)
+  agreedToTerms Boolean   @default(true)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String    @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model UpdateRequest {
+  id             String    @id @default(cuid())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  requestType    String    // "PROFILE_UPDATE", "SERVICE_UPDATE", "CHILD_ADD", "CHILD_UPDATE", etc.
+  requestData    Json      // Store the updated data
+  status         String    @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  adminComment   String?   // Optional comment from admin when approving/rejecting
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
