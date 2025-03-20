@@ -183,15 +183,17 @@ export default function ChildrenTab({ profile, refreshProfile }: ChildrenTabProp
             </div>
             
             <TextField
-              label="Age"
-              type="number"
-              {...registerChild('age')}
-              error={!!childErrors.age}
-              helperText={childErrors.age?.message}
-              fullWidth
-              className="mb-4"
-            />
-            
+  label="Age"
+  type="number"
+  inputProps={{ min: 0 }}
+  {...registerAddChild("age", {
+    valueAsNumber: true,
+  })}
+  error={!!addChildErrors.age}
+  helperText={addChildErrors.age?.message}
+  fullWidth
+  className="mb-4"
+/>
             <TextField
               label="Special Notes"
               {...registerChild('specialNotes')}
