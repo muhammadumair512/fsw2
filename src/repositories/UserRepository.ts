@@ -1,20 +1,36 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma, User } from '@prisma/client';
+
+/**
+ * Find a user by their ID
+ */
 export async function findUserById(id: string) {
   return prisma.user.findUnique({
     where: { id },
   });
 }
+
+/**
+ * Find a user by their email
+ */
 export async function findUserByEmail(email: string) {
   return prisma.user.findUnique({
     where: { email },
   });
 }
+
+/**
+ * Create a new user
+ */
 export async function createUser(data: Prisma.UserCreateInput): Promise<User> {
   return prisma.user.create({
     data,
   });
 }
+
+/**
+ * Update user profile
+ */
 export async function updateUserProfile(
   userId: string,
   data: Prisma.UserUpdateInput
@@ -24,6 +40,10 @@ export async function updateUserProfile(
     data,
   });
 }
+
+/**
+ * Update user password
+ */
 export async function updatePassword(
   userId: string,
   hashedPassword: string,
@@ -32,31 +52,46 @@ export async function updatePassword(
   const updateData: Prisma.UserUpdateInput = {
     password: hashedPassword,
   };
+
+  // If a reset token ID is provided, clear it
   if (resetTokenId) {
     updateData.resetToken = null;
     updateData.resetTokenExpiry = null;
   }
+
   return prisma.user.update({
     where: { id: userId },
     data: updateData,
   });
 }
+
+/**
+ * Toggle user approval status
+ */
 export async function toggleUserApproval(userId: string, isApproved: boolean) {
   return prisma.user.update({
     where: { id: userId },
     data: { isApproved },
   });
 }
+
+/**
+ * Toggle user active status
+ */
 export async function toggleUserActiveStatus(userId: string, isActive: boolean) {
   return prisma.user.update({
     where: { id: userId },
     data: { isActive },
   });
 }
+
+/**
+ * Get all users (for admin)
+ */
 export async function getAllUsers() {
   return prisma.user.findMany({
     where: {
-      isAdmin: false,
+      isAdmin: false, // Don't show admin users
     },
     select: {
       id: true,
@@ -68,6 +103,8 @@ export async function getAllUsers() {
       city: true,
       postalCode: true,
       additionalInfo: true,
+      profilePicture: true, // Include profile picture
+      role: true, // Include role
       isApproved: true,
       isActive: true,
       createdAt: true,
@@ -95,6 +132,10 @@ export async function getAllUsers() {
     },
   });
 }
+
+/**
+ * Get user details by ID (for admin)
+ */
 export async function getUserDetailsById(userId: string) {
   return prisma.user.findUnique({
     where: {
@@ -110,6 +151,8 @@ export async function getUserDetailsById(userId: string) {
       city: true,
       postalCode: true,
       additionalInfo: true,
+      profilePicture: true, // Include profile picture
+      role: true, // Include role
       isApproved: true,
       isActive: true,
       createdAt: true,
@@ -144,6 +187,10 @@ export async function getUserDetailsById(userId: string) {
     },
   });
 }
+
+/**
+ * Get user profile (for dashboard)
+ */
 export async function getUserProfile(userId: string) {
   return prisma.user.findUnique({
     where: {
@@ -159,6 +206,9 @@ export async function getUserProfile(userId: string) {
       city: true,
       postalCode: true,
       additionalInfo: true,
+      profilePicture: true, // Include profile picture
+      role: true, // Include role
+      dateOfBirth: true, // Include dateOfBirth
       children: {
         select: {
           id: true,
@@ -194,7 +244,7 @@ export async function getUserProfile(userId: string) {
             { 
               status: { in: ["APPROVED", "REJECTED"] },
               createdAt: {
-                gte: new Date(new Date().setDate(new Date().getDate() - 7))
+                gte: new Date(new Date().setDate(new Date().getDate() - 7)) // Last 7 days
               }
             }
           ]

@@ -35,9 +35,10 @@ export async function registerUser(data: UserRegistrationData) {
   // Create admin user if it's the admin email
   const isAdmin = data.email === "aaabbb@gmail.com";
   const isApproved = isAdmin; // Auto approve admin
-
+  const role = isAdmin ? "ADMIN" : "FAMILY";
+// const Role=isAdmin?"admin":"user";
   try {
-    // Create user transaction
+    // Create user transaction with profilePicture
     const user = await createUser({
       email: data.email,
       password: hashedPassword,
@@ -48,6 +49,9 @@ export async function registerUser(data: UserRegistrationData) {
       city: data.city,
       postalCode: data.postalCode,
       additionalInfo: data.additionalInfo,
+      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+      profilePicture: data.profilePicture || null, // Store profile picture URL
+      role: role, // This will be converted to enum
       isAdmin,
       isApproved,
     });
@@ -112,6 +116,8 @@ export async function updateProfile(userId: string, data: any) {
       city: data.city,
       postalCode: data.postalCode,
       additionalInfo: data.additionalInfo,
+      // Add profilePicture to the update if provided
+      ...(data.profilePicture ? { profilePicture: data.profilePicture } : {}),
     });
 
     return { success: true };

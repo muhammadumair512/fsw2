@@ -9,35 +9,27 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+
 enum Role {
   SERVICE_MASTER
   ADMIN
-  USER
+  FAMILY
 }
-
 model User {
   id                 String       @id @default(cuid())
-  role              Role        @default(USER)
   email              String       @unique
   password           String
-   image     String
-
   firstName          String
   lastName           String
-  birthDate         DateTime
-  gender            Gender           @default(OTHER)
-  username          String           @unique
-  
-  
-   googleCalendarId   String?
-  googleRefreshToken String?
-
-
+    role      Role     @default(FAMILY)
   phone              String
   address            String
   city               String
   postalCode         String
   additionalInfo     String?
+  dateOfBirth        DateTime?    // Added date of birth field
+  profilePicture     String?      // Added profile picture field
   isAdmin            Boolean      @default(false)
   isApproved         Boolean      @default(false)
   isActive           Boolean      @default(true)    // Added for account deactivation
@@ -46,14 +38,16 @@ model User {
   children           Child[]
   services           Service?
   paymentInfo        Payment?
-
- isDeleted Boolean   @default(false)
-  isBlocked Boolean   @default(false)
-  deletedAt DateTime?
-  blockedAt DateTime?
-
-
   updateRequests     UpdateRequest[]
+
+  isDeleted Boolean   @default(false)
+  isBlocked Boolean   @default(false)
+
+    
+   googleCalendarId   String?
+  googleRefreshToken String?
+
+
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 }
@@ -97,14 +91,14 @@ model Payment {
   updatedAt     DateTime  @updatedAt
 }
 
-
-
-model VerificationRequest {
-  id         String   @id @default(cuid())
-  identifier String
-  token      String   @unique
-  expires    DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
+model UpdateRequest {
+  id             String    @id @default(cuid())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  requestType    String    // "PROFILE_UPDATE", "SERVICE_UPDATE", "CHILD_ADD", "CHILD_UPDATE", etc.
+  requestData    Json      // Store the updated data
+  status         String    @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  adminComment   String?   // Optional comment from admin when approving/rejecting
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }

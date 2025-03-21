@@ -1,18 +1,19 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Checkbox, FormControlLabel, TextField } from '@mui/material';
+import { Box, Button, Checkbox, FormControlLabel, Grid, TextField, Typography } from '@mui/material';
 import axios from 'axios';
 import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 
 import { registerSchema, UserRegistrationData } from '@/types/auth/UserTypes';
 import { useSnackbar } from '@/contexts/SnackbarContext';
+import ProfileImageUpload from '@/components/ProfileImageUpload';
 
 export default function RegisterForm() {
   const { showSnackbar } = useSnackbar();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const {
@@ -21,7 +22,8 @@ export default function RegisterForm() {
     control,
     formState: { errors },
     reset,
-  } = useForm<UserRegistrationData>({
+    setValue,
+  } = useForm({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       children: [{ firstName: '', lastName: '', age: 0, specialNotes: '' }],
@@ -43,7 +45,7 @@ export default function RegisterForm() {
     name: 'children',
   });
 
-  const onSubmit = async (data: UserRegistrationData) => {
+  const onSubmit = async (data) => {
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -57,7 +59,7 @@ export default function RegisterForm() {
         severity: 'success',
         title: 'Registration Complete',
       });
-    } catch (error: any) {
+    } catch (error) {
       setSubmitError(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -79,6 +81,55 @@ export default function RegisterForm() {
         <div className="bg-red-50 p-4 rounded-md text-red-800">{submitError}</div>
       )}
 
+      <Box mb={4}>
+        <Typography variant="h6" component="h3" gutterBottom>
+          Profile Picture
+        </Typography>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={4}>
+            <Box 
+              sx={{ 
+                height: 150, 
+                width: 150, 
+                borderRadius: '50%', 
+                backgroundColor: 'grey.200',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                margin: '0 auto'
+              }}
+            >
+              {register('profilePicture').value ? (
+                <img 
+                  src={register('profilePicture').value} 
+                  alt="Profile preview" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <Typography color="text.secondary">No image</Typography>
+              )}
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={8}>
+            <ProfileImageUpload 
+              onImageUpload={(imageUrl) => {
+                setValue('profilePicture', imageUrl);
+              }}
+            />
+            <input type="hidden" {...register('profilePicture')} />
+            {errors.profilePicture && (
+              <Typography color="error" variant="caption" sx={{ mt: 1 }}>
+                {errors.profilePicture.message}
+              </Typography>
+            )}
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Upload a profile photo (optional)
+            </Typography>
+          </Grid>
+        </Grid>
+      </Box>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <TextField
@@ -98,6 +149,19 @@ export default function RegisterForm() {
             fullWidth
           />
         </div>
+      </div>
+
+      {/* Date of Birth field */}
+      <div>
+        <TextField
+          label="Date of Birth"
+          type="date"
+          {...register('dateOfBirth')}
+          error={!!errors.dateOfBirth}
+          helperText={errors.dateOfBirth?.message}
+          InputLabelProps={{ shrink: true }}
+          fullWidth
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -185,7 +249,7 @@ export default function RegisterForm() {
               <div>
                 <TextField
                   label="First Name"
-                  {...register(`children.${index}.firstName` as const)}
+                  {...register(`children.${index}.firstName`)}
                   error={!!errors.children?.[index]?.firstName}
                   helperText={errors.children?.[index]?.firstName?.message}
                   fullWidth
@@ -194,7 +258,7 @@ export default function RegisterForm() {
               <div>
                 <TextField
                   label="Last Name"
-                  {...register(`children.${index}.lastName` as const)}
+                  {...register(`children.${index}.lastName`)}
                   error={!!errors.children?.[index]?.lastName}
                   helperText={errors.children?.[index]?.lastName?.message}
                   fullWidth
@@ -204,8 +268,10 @@ export default function RegisterForm() {
                 <TextField
                   label="Age"
                   type="number"
-                  {...register(`children.${index}.age` as const, {
+                  inputProps={{ min: 1 }}
+                  {...register(`children.${index}.age`, {
                     valueAsNumber: true,
+                    validate: (value) => value > 0 || "Age must be a positive number"
                   })}
                   error={!!errors.children?.[index]?.age}
                   helperText={errors.children?.[index]?.age?.message}
@@ -218,7 +284,7 @@ export default function RegisterForm() {
                 label="Special Notes"
                 multiline
                 rows={3}
-                {...register(`children.${index}.specialNotes` as const)}
+                {...register(`children.${index}.specialNotes`)}
                 error={!!errors.children?.[index]?.specialNotes}
                 helperText={errors.children?.[index]?.specialNotes?.message}
                 placeholder="Allergies, medical conditions, special needs, or any other important information"

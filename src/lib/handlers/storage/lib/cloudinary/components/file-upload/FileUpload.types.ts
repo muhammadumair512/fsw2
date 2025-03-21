@@ -14,9 +14,15 @@ export interface UploadStatus {
   urls?: string[];
 }
 
+
 export interface FileUploadProps {
-  maxFileSize?: number; // in bytes
+  maxFileSize?: number;
   maxFiles?: number;
-  hoist: (file: string) => void;
+  hoist?: (url: string) => void;
   reset?: boolean;
+  acceptTypes?: string; 
 }
+
+
+
+

@@ -2,7 +2,7 @@
 
 import { EditOutlined } from '@mui/icons-material';
 import { Button, TextField, Dialog, DialogTitle, DialogContent, 
-  DialogActions, Alert, CircularProgress, Typography } from '@mui/material';
+  DialogActions, Alert, CircularProgress, Typography, Avatar, Box } from '@mui/material';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSnackbar } from '@/contexts/SnackbarContext';
 import { useProfile } from '@/hooks/useProfile';
 import { z } from 'zod';
+import ProfileImageUpload from '@/components/ProfileImageUpload';
 
 // Profile update schema
 const profileUpdateSchema = z.object({
@@ -20,6 +21,7 @@ const profileUpdateSchema = z.object({
   city: z.string().min(1, 'City is required'),
   postalCode: z.string().min(1, 'Postal code is required'),
   additionalInfo: z.string().optional(),
+  profilePicture: z.string().optional(),
 });
 
 type ProfileUpdateFormData = z.infer<typeof profileUpdateSchema>;
@@ -50,6 +52,7 @@ export default function ProfileTab({ profile, refreshProfile }: ProfileTabProps)
       city: profile.city || '',
       postalCode: profile.postalCode || '',
       additionalInfo: profile.additionalInfo || '',
+      profilePicture: profile.profilePicture || '',
     },
   });
 
@@ -62,6 +65,7 @@ export default function ProfileTab({ profile, refreshProfile }: ProfileTabProps)
     setValue('city', profile.city || '');
     setValue('postalCode', profile.postalCode || '');
     setValue('additionalInfo', profile.additionalInfo || '');
+    setValue('profilePicture', profile.profilePicture || '');
     
     setShowProfileDialog(true);
   };
@@ -91,6 +95,11 @@ export default function ProfileTab({ profile, refreshProfile }: ProfileTabProps)
     }
   };
 
+  const formatDate = (date: string | null) => {
+    if (!date) return 'Not specified';
+    return new Date(date).toLocaleDateString();
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -107,11 +116,37 @@ export default function ProfileTab({ profile, refreshProfile }: ProfileTabProps)
         </Button>
       </div>
       
+      <Box display="flex" mb={4}>
+        {profile.profilePicture ? (
+          <Avatar 
+            src={profile.profilePicture} 
+            alt={`${profile.firstName} ${profile.lastName}`}
+            sx={{ width: 100, height: 100, mr: 3 }}
+          />
+        ) : (
+          <Avatar 
+            sx={{ width: 100, height: 100, mr: 3, fontSize: '2.5rem' }}
+          >
+            {profile.firstName?.charAt(0)}{profile.lastName?.charAt(0)}
+          </Avatar>
+        )}
+        
+        <Box>
+          <Typography variant="h5" gutterBottom>
+            {profile.firstName} {profile.lastName}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {profile.role || 'Family Member'}
+          </Typography>
+          {profile.dateOfBirth && (
+            <Typography variant="body2" color="text.secondary">
+              DOB: {formatDate(profile.dateOfBirth)}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Typography variant="subtitle1" fontWeight="bold">Name:</Typography>
-          <Typography>{profile.firstName} {profile.lastName}</Typography>
-        </div>
         <div>
           <Typography variant="subtitle1" fontWeight="bold">Email:</Typography>
           <Typography>{profile.email}</Typography>
@@ -137,6 +172,19 @@ export default function ProfileTab({ profile, refreshProfile }: ProfileTabProps)
         <DialogTitle>Edit Profile</DialogTitle>
         <form onSubmit={handleSubmit(onSubmitProfileUpdate)}>
           <DialogContent>
+            {/* Profile Picture Upload */}
+            <Box mb={3}>
+              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                Profile Picture
+              </Typography>
+              <ProfileImageUpload 
+                onImageUpload={(imageUrl) => {
+                  setValue('profilePicture', imageUrl);
+                }}
+              />
+              <input type="hidden" {...register('profilePicture')} />
+            </Box>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <TextField
                 label="First Name"

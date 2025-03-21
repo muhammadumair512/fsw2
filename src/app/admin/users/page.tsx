@@ -25,6 +25,7 @@ import {
   IconButton,
   Box,
   Collapse,
+  Avatar,
 } from '@mui/material';
 import { 
   Visibility as VisibilityIcon,
@@ -47,6 +48,7 @@ type User = {
   address: string;
   city: string;
   postalCode: string;
+  profilePicture?: string; // Added profile picture
   additionalInfo?: string;
   isApproved: boolean;
   isActive: boolean;
@@ -102,7 +104,24 @@ function UserRow(props: {
             {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         </TableCell>
-        <TableCell>{`${user.firstName} ${user.lastName}`}</TableCell>
+        <TableCell>
+          <Box display="flex" alignItems="center">
+            {user.profilePicture ? (
+              <Avatar 
+                src={user.profilePicture} 
+                alt={`${user.firstName} ${user.lastName}`}
+                sx={{ mr: 2, width: 40, height: 40 }}
+              />
+            ) : (
+              <Avatar 
+                sx={{ mr: 2, width: 40, height: 40, bgcolor: 'primary.main' }}
+              >
+                {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+              </Avatar>
+            )}
+            {`${user.firstName} ${user.lastName}`}
+          </Box>
+        </TableCell>
         <TableCell>{user.email}</TableCell>
         <TableCell>{user.phone}</TableCell>
         <TableCell>
@@ -117,16 +136,16 @@ function UserRow(props: {
             <Chip label="Inactive" color="error" />
           )}
         </TableCell>
-        {/* <TableCell>
+        <TableCell>
           <div className="flex space-x-2">
-            <Button
+            {/* <Button
               variant="outlined"
               size="small"
               startIcon={<VisibilityIcon />}
               onClick={() => viewUserDetails(user.id)}
             >
               View
-            </Button>
+            </Button> */}
             
             <Button
               variant={user.isApproved ? 'outlined' : 'contained'} 
@@ -139,7 +158,7 @@ function UserRow(props: {
               {approveLoading === user.id ? 'Processing...' : user.isApproved ? 'Block' : 'Approve'}
             </Button>
             
-            {user.isApproved && (
+            {/* {user.isApproved && (
               <Button
                 variant={user.isActive ? 'outlined' : 'contained'}
                 color={user.isActive ? 'error' : 'success'}
@@ -158,9 +177,9 @@ function UserRow(props: {
               >
                 {toggleStatusLoading === user.id ? 'Processing...' : user.isActive ? 'Deactivate' : 'Activate'}
               </Button>
-            )}
+            )} */}
           </div>
-        </TableCell> */}
+        </TableCell>
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
@@ -297,99 +316,119 @@ export default function UsersPage() {
     fetchUsers();
   }, [showSnackbar]);
 
-  const toggleApprovalStatus = async (userId: string, currentStatus: boolean) => {
-    try {
-      setApproveLoading(userId);
-      console.log(`Toggling user approval: ${userId}, current status: ${currentStatus}, new status: ${!currentStatus}`);
-      
-      const response = await axios.post(`/api/admin/toggle-approval`, { 
-        userId, 
-        isApproved: !currentStatus 
-      });
-      
-      console.log('Toggle approval response:', response.data);
-      
-      // Update user in state
-      const updatedUsers = users.map((user) =>
-        user.id === userId ? { ...user, isApproved: !currentStatus } : user
-      );
-      setUsers(updatedUsers);
-      
-      // Also update filtered users list
-      setFilteredUsers(filteredUsers.map((user) =>
-        user.id === userId ? { ...user, isApproved: !currentStatus } : user
-      ));
-      
-      // If viewing user details, update the selected user too
-      if (selectedUser && selectedUser.id === userId) {
-        setSelectedUser({
-          ...selectedUser,
-          isApproved: !currentStatus
-        });
-      }
-      
-      showSnackbar({
-        message: `User ${!currentStatus ? 'approved' : 'blocked'} successfully!`,
-        severity: 'success',
-      });
-      
-    } catch (error: any) {
-      console.error('Error toggling user approval status:', error);
-      showSnackbar({
-        message: error.response?.data?.message || 'Failed to update user approval status',
-        severity: 'error',
-      });
-    } finally {
-      setApproveLoading(null);
+// Replace the toggleApprovalStatus function with this simpler version
+const toggleApprovalStatus = async (userId: string, currentStatus: boolean) => {
+  try {
+    setApproveLoading(userId);
+    
+    // Using the direct endpoint with no auth checks
+    const response = await fetch('/api/direct-update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        field: 'isApproved',
+        value: !currentStatus
+      }),
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update user');
     }
-  };
+    
+    // Update UI without refetching
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === userId ? { ...user, isApproved: !currentStatus } : user
+      )
+    );
+    
+    setFilteredUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === userId ? { ...user, isApproved: !currentStatus } : user
+      )
+    );
+    
+    if (selectedUser?.id === userId) {
+      setSelectedUser(prev => prev ? { ...prev, isApproved: !currentStatus } : null);
+    }
+    
+    showSnackbar({
+      message: `User ${!currentStatus ? 'approved' : 'blocked'} successfully`,
+      severity: 'success',
+    });
+    
+  } catch (error: any) {
+    console.error('Error updating user:', error);
+    showSnackbar({
+      message: error.message || 'Failed to update user status',
+      severity: 'error',
+    });
+  } finally {
+    setApproveLoading(null);
+  }
+};
 
-  const toggleActiveStatus = async (userId: string, currentStatus: boolean) => {
-    try {
-      setToggleStatusLoading(userId);
-      console.log(`Toggling user status: ${userId}, current status: ${currentStatus}, new status: ${!currentStatus}`);
-      
-      const response = await axios.post(`/api/admin/toggle-user-status`, { 
-        userId, 
-        isActive: !currentStatus 
-      });
-      
-      console.log('Toggle status response:', response.data);
-      
-      // Update user in state
-      const updatedUsers = users.map((user) =>
-        user.id === userId ? { ...user, isActive: !currentStatus } : user
-      );
-      setUsers(updatedUsers);
-      
-      // Also update filtered users list
-      setFilteredUsers(filteredUsers.map((user) =>
-        user.id === userId ? { ...user, isActive: !currentStatus } : user
-      ));
-      
-      // If viewing user details, update the selected user too
-      if (selectedUser && selectedUser.id === userId) {
-        setSelectedUser({
-          ...selectedUser,
-          isActive: !currentStatus
-        });
-      }
-      
-      showSnackbar({
-        message: `User ${!currentStatus ? 'activated' : 'deactivated'} successfully!`,
-        severity: 'success',
-      });
-      
-    } catch (error: any) {
-      console.error('Error toggling user status:', error);
-      showSnackbar({
-        message: error.response?.data?.message || 'Failed to update user status',
-        severity: 'error',
-      });
-    } finally {
-      setToggleStatusLoading(null);
+ // Replace the toggleActiveStatus function with this simpler version
+const toggleActiveStatus = async (userId: string, currentStatus: boolean) => {
+  try {
+    setToggleStatusLoading(userId);
+    
+    // Using the direct endpoint with no auth checks
+    const response = await fetch('/api/direct-update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        field: 'isActive',
+        value: !currentStatus
+      }),
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update user');
     }
-  };
+    
+    // Update UI without refetching
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === userId ? { ...user, isActive: !currentStatus } : user
+      )
+    );
+    
+    setFilteredUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === userId ? { ...user, isActive: !currentStatus } : user
+      )
+    );
+    
+    if (selectedUser?.id === userId) {
+      setSelectedUser(prev => prev ? { ...prev, isActive: !currentStatus } : null);
+    }
+    
+    showSnackbar({
+      message: `User ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
+      severity: 'success',
+    });
+    
+  } catch (error: any) {
+    console.error('Error updating user:', error);
+    showSnackbar({
+      message: error.message || 'Failed to update user status',
+      severity: 'error',
+    });
+  } finally {
+    setToggleStatusLoading(null);
+  }
+};
 
   const viewUserDetails = async (userId: string) => {
     try {
@@ -417,6 +456,7 @@ export default function UsersPage() {
     );
   }
 
+  
   return (
     <Paper className="p-6">
       <Typography variant="h4" component="h1" gutterBottom>
@@ -497,12 +537,26 @@ export default function UsersPage() {
           ) : selectedUser && (
             <div className="space-y-6">
               <div>
+                <Box display="flex" alignItems="center" mb={2}>
+                  {selectedUser.profilePicture ? (
+                    <Avatar 
+                      src={selectedUser.profilePicture} 
+                      alt={`${selectedUser.firstName} ${selectedUser.lastName}`}
+                      sx={{ width: 80, height: 80, mr: 2 }}
+                    />
+                  ) : (
+                    <Avatar 
+                      sx={{ width: 80, height: 80, mr: 2, fontSize: '2rem' }}
+                    >
+                      {selectedUser.firstName.charAt(0)}{selectedUser.lastName.charAt(0)}
+                    </Avatar>
+                  )}
+                  <Typography variant="h5">
+                    {selectedUser.firstName} {selectedUser.lastName}
+                  </Typography>
+                </Box>
                 <Typography variant="h6" gutterBottom>Personal Information</Typography>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Typography variant="subtitle1" fontWeight="bold">Name:</Typography>
-                    <Typography>{selectedUser.firstName} {selectedUser.lastName}</Typography>
-                  </div>
                   <div>
                     <Typography variant="subtitle1" fontWeight="bold">Email:</Typography>
                     <Typography>{selectedUser.email}</Typography>
@@ -629,7 +683,7 @@ export default function UsersPage() {
             </div>
           )}
         </DialogContent>
-        {/* <DialogActions>
+        <DialogActions>
           <Button onClick={() => setUserDetailOpen(false)}>Close</Button>
           {selectedUser && (
             <>
@@ -670,7 +724,7 @@ export default function UsersPage() {
               )}
             </>
           )}
-        </DialogActions> */}
+        </DialogActions>
       </Dialog>
     </Paper>
   );

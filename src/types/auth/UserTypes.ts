@@ -41,6 +41,9 @@ export const registerSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string().min(8, "Confirm password is required"),
   additionalInfo: z.string().optional(),
+  // New fields
+  dateOfBirth: z.string().min(1, "Date of birth is required"),
+  profilePicture: z.string().optional(),
   children: z.array(childSchema).min(1, "At least one child is required"),
   services: servicesSchema,
   payment: paymentSchema,

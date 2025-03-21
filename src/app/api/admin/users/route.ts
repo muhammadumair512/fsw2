@@ -8,10 +8,18 @@ import { getUsers } from '@/services/UserService';
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
+    
+    // Debug the session to see what's available
+    console.log("Admin session check:", {
+      sessionExists: !!session,
+      user: session?.user,
+      isAdmin: session?.user?.isAdmin
+    });
 
-    if (!session?.user?.isAdmin) {
+    if (!session?.user || session.user.isAdmin !== true) {
+      console.log("User is not admin, returning 401");
       return NextResponse.json(
-        { message: 'Unauthorized' },
+        { message: 'Unauthorized. Admin privileges required.' },
         { status: 401 }
       );
     }
