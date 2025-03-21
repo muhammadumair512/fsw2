@@ -45,7 +45,7 @@ export default function RegisterForm() {
     name: 'children',
   });
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     setSubmitError(null);
 

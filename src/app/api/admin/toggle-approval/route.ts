@@ -7,7 +7,7 @@ const emailService = new EmailService();
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (session?.user?.role !== 'admin') {
+    if (!session?.user?.isAdmin) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 401 }
