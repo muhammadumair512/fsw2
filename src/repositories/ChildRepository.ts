@@ -1,19 +1,13 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma, Child } from '@prisma/client';
+import { Prisma,  Child } from '@prisma/client';
 
-/**
- * Find a child by ID
- */
 export async function findChildById(id: string) {
   return prisma.child.findUnique({
     where: { id },
   });
 }
 
-/**
- * Find a child by ID and user ID
- * This is used to verify ownership
- */
+
 export async function findChildByIdAndUserId(id: string, userId: string) {
   return prisma.child.findFirst({
     where: {
@@ -23,9 +17,7 @@ export async function findChildByIdAndUserId(id: string, userId: string) {
   });
 }
 
-/**
- * Get all children for a user
- */
+
 export async function getChildrenByUserId(userId: string) {
   return prisma.child.findMany({
     where: {
@@ -37,18 +29,14 @@ export async function getChildrenByUserId(userId: string) {
   });
 }
 
-/**
- * Create a new child
- */
+
 export async function createChild(data: Prisma.ChildCreateInput): Promise<Child> {
   return prisma.child.create({
     data,
   });
 }
 
-/**
- * Update a child's information
- */
+
 export async function updateChild(
   id: string,
   data: Prisma.ChildUpdateInput
@@ -59,9 +47,6 @@ export async function updateChild(
   });
 }
 
-/**
- * Delete a child
- */
 export async function deleteChild(id: string): Promise<Child> {
   return prisma.child.delete({
     where: { id },

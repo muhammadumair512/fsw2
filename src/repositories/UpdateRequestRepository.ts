@@ -1,18 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma, UpdateRequest } from '@prisma/client';
-
-/**
- * Find update request by ID
- */
 export async function findUpdateRequestById(id: string) {
   return prisma.updateRequest.findUnique({
     where: { id },
   });
 }
-
-/**
- * Find update request by ID with user details
- */
 export async function findUpdateRequestWithUser(id: string) {
   return prisma.updateRequest.findUnique({
     where: { id },
@@ -28,10 +20,6 @@ export async function findUpdateRequestWithUser(id: string) {
     },
   });
 }
-
-/**
- * Get all update requests for a user
- */
 export async function findUpdateRequestsByUserId(userId: string) {
   return prisma.updateRequest.findMany({
     where: {
@@ -42,10 +30,6 @@ export async function findUpdateRequestsByUserId(userId: string) {
     },
   });
 }
-
-/**
- * Get all update requests (for admin)
- */
 export async function getAllUpdateRequests() {
   return prisma.updateRequest.findMany({
     orderBy: {
@@ -62,10 +46,6 @@ export async function getAllUpdateRequests() {
     },
   });
 }
-
-/**
- * Create a new update request
- */
 export async function createUpdateRequest(
   data: Prisma.UpdateRequestUncheckedCreateInput
 ): Promise<UpdateRequest> {
@@ -73,10 +53,6 @@ export async function createUpdateRequest(
     data,
   });
 }
-
-/**
- * Update the status of an update request
- */
 export async function updateRequestStatus(
   id: string,
   status: string,

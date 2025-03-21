@@ -1,39 +1,33 @@
-import { prisma } from '@/lib/prisma';
-import crypto from 'crypto';
-import { AuthErrorType } from '@/lib/handlers/errors';
-import AuthError from '@/lib/handlers/errors/types/AuthError';
+import { AuthErrorType } from '@/lib/handlers/errors'; 
+import AuthError from '@/lib/handlers/errors/types/AuthError'; 
+import { prisma } from '@/lib/prisma'; 
 
-/**
- * Creates a verification token for password reset or email verification
- */
+
 export async function createVerificationToken(
   identifier: string,
-  expiresIn: number = 3600000 // 1 hour in milliseconds
+  expiresIn: number = 24 * 60 * 60 * 1000 
 ) {
-  // Generate a random token
-  const token = crypto.randomBytes(32).toString('hex');
+  const token = Math.random().toString(36).substring(2, 15);
   
-  // Set expiry time
-  const tokenExpiry = new Date();
-  tokenExpiry.setTime(tokenExpiry.getTime() + expiresIn);
   
-  // Save to database
+  
+  const userId = identifier.split(':')[0];
+  
+  
   await prisma.user.update({
     where: {
-      id: identifier.split(':')[0],
+      id: userId,
     },
     data: {
       resetToken: token,
-      resetTokenExpiry: tokenExpiry,
+      resetTokenExpiry: new Date(Date.now() + expiresIn),
     },
   });
   
   return token;
 }
 
-/**
- * Validates a verification token
- */
+
 export async function validateVerificationToken(
   identifier: string,
   token: string
@@ -41,26 +35,29 @@ export async function validateVerificationToken(
   const userId = identifier?.split(':')[0];
   
   if (!userId) {
-    throw new Error('Invalid identifier');
+    throw new AuthError(AuthErrorType.TOKEN_INVALID, 401);
   }
   
-  const user = await prisma.user.findFirst({
+  
+  const verificationRequest = await prisma.user.findFirst({
     where: {
       id: userId,
       resetToken: token,
-      resetTokenExpiry: {
-        gt: new Date(),
-      },
     },
   });
   
-  if (!user) {
-    throw new Error('Invalid or expired token');
+  if (!verificationRequest) {
+    throw new AuthError(AuthErrorType.TOKEN_INVALID, 401);
+  }
+  
+  
+  if (verificationRequest.resetTokenExpiry && verificationRequest.resetTokenExpiry < new Date()) {
+    throw new AuthError(AuthErrorType.TOKEN_EXPIRED, 401);
   }
   
   return {
-    id: user.id,
-    email: user.email,
+    id: verificationRequest.id,
+    email: verificationRequest.email,
   };
 }
 
@@ -68,7 +65,7 @@ export async function validateVerificationToken(
  * Find a user by reset token
  */
 export async function findUserByResetToken(token: string) {
-  return prisma.user.findFirst({
+  const verificationRequest = await prisma.user.findFirst({
     where: {
       resetToken: token,
       resetTokenExpiry: {
@@ -76,6 +73,8 @@ export async function findUserByResetToken(token: string) {
       },
     },
   });
+  
+  return verificationRequest;
 }
 
 /**

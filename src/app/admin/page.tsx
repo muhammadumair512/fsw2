@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client';
 
 import { 
@@ -31,21 +31,21 @@ export default function AdminDashboard() {
     updateRequests: 0,
   });
 
-  // Fetch dashboard stats
+  
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setIsLoading(true);
         
-        // Get users
+        
         const usersResponse = await axios.get('/api/admin/users');
         const users = usersResponse.data;
         
-        // Get update requests
+        
         const requestsResponse = await axios.get('/api/admin/update-requests');
         const requests = requestsResponse.data;
         
-        // Calculate stats
+        
         const pendingUsers = users.filter((user: any) => !user.isApproved).length;
         const activeUsers = users.filter((user: any) => user.isApproved && user.isActive).length;
         const inactiveUsers = users.filter((user: any) => user.isApproved && !user.isActive).length;

@@ -117,7 +117,7 @@ function UserRow(props: {
             <Chip label="Inactive" color="error" />
           )}
         </TableCell>
-        <TableCell>
+        {/* <TableCell>
           <div className="flex space-x-2">
             <Button
               variant="outlined"
@@ -160,7 +160,7 @@ function UserRow(props: {
               </Button>
             )}
           </div>
-        </TableCell>
+        </TableCell> */}
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
@@ -629,7 +629,7 @@ export default function UsersPage() {
             </div>
           )}
         </DialogContent>
-        <DialogActions>
+        {/* <DialogActions>
           <Button onClick={() => setUserDetailOpen(false)}>Close</Button>
           {selectedUser && (
             <>
@@ -670,7 +670,7 @@ export default function UsersPage() {
               )}
             </>
           )}
-        </DialogActions>
+        </DialogActions> */}
       </Dialog>
     </Paper>
   );
